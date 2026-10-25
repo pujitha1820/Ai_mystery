@@ -7,6 +7,7 @@ import caseRoutes from './routes/caseRoutes.js';
 import { errorResponse } from './utils/apiError.js';
 
 const app = express();
+app.set('trust proxy', 1);
 const clientDist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../client/dist');
 const clientOrigin = process.env.CLIENT_ORIGIN || process.env.RENDER_EXTERNAL_URL || 'http://localhost:5173';
 
