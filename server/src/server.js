@@ -1,7 +1,11 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import mongoose from 'mongoose';
-import app from './app.js';
 import { loadEnv } from './config/env.js';
+
+dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.env') });
+const { default: app } = await import('./app.js');
 
 let config;
 try { config = loadEnv(); } catch (error) {
