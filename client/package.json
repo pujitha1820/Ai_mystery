@@ -1,0 +1,9 @@
+{
+  "name": "ai-mystery-room-client",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": { "dev": "vite", "build": "vite build", "test": "vitest run" },
+  "dependencies": { "@vitejs/plugin-react": "6.1.2", "vite": "8.3.5", "react": "19.1.1", "react-dom": "19.1.1", "react-router-dom": "7.8.2", "lucide-react": "0.468.0" },
+  "devDependencies": { "@testing-library/jest-dom": "6.8.0", "@testing-library/react": "16.3.0", "jsdom": "26.1.0", "vitest": "5.0.0" }
+}
