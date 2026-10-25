@@ -46,7 +46,7 @@ For later updates, commit and push changes to the connected branch; Render will 
 
 ## Environment
 
-Server variables are documented in `server/.env.example`. `GEMINI_API_KEY` is backend-only. `GEMINI_MODEL` defaults to `gemini-3.8-flash` and can be changed to a model enabled for your API key. `GEMINI_MAX_RETRIES` bounds retries for transient provider errors (default 2); `CASE_GENERATION_TIMEOUT_MS` bounds each provider request including retries, and `CASE_GENERATION_MAX_ATTEMPTS` controls retries for malformed or inconsistent generated cases. The client only needs `VITE_API_BASE_URL` when the API is hosted on a different origin.
+Server variables are documented in `server/.env.example`. `GEMINI_API_KEY` is backend-only. `GEMINI_MODEL` defaults to `gemini-3.8-flash` and can be changed to a model enabled for your API key. `GEMINI_MAX_RETRIES` bounds retries for transient provider errors (default 2); daily quota exhaustion is returned without retrying. `CASE_GENERATION_TIMEOUT_MS` bounds each provider request including retries, and `CASE_GENERATION_MAX_ATTEMPTS` controls retries for malformed or inconsistent generated cases. The client only needs `VITE_API_BASE_URL` when the API is hosted on a different origin.
 
 ## Tests
 

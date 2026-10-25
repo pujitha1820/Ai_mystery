@@ -38,7 +38,7 @@ export async function generateMystery(input, { generateJsonFn = generateJson } =
       return { ...validated, attempts: attempt };
     } catch (error) {
       lastError = error;
-      if (['AI_PROVIDER_UNAVAILABLE', 'AI_PROVIDER_TIMEOUT', 'AI_PROVIDER_ERROR'].includes(error.code)) throw error;
+      if (['AI_PROVIDER_UNAVAILABLE', 'AI_PROVIDER_TIMEOUT', 'AI_PROVIDER_ERROR', 'AI_QUOTA_EXCEEDED'].includes(error.code)) throw error;
     }
   }
   if (lastError?.code) throw lastError;

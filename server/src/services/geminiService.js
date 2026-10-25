@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { withGeminiRetries, GeminiProviderRequestError, GeminiProviderUnavailableError } from './geminiRetry.js';
+import { withGeminiRetries, GeminiProviderRequestError, GeminiProviderUnavailableError, GeminiQuotaExceededError } from './geminiRetry.js';
 
 let client;
 function getClient() {
@@ -36,7 +36,7 @@ export async function generateJson(prompt, schema, timeoutMs = Number(process.en
       },
     );
   } catch (error) {
-    if (error instanceof GeminiProviderUnavailableError || error instanceof GeminiProviderRequestError || error.code === 'AI_PROVIDER_ERROR') throw error;
+    if (error instanceof GeminiProviderUnavailableError || error instanceof GeminiProviderRequestError || error instanceof GeminiQuotaExceededError || error.code === 'AI_PROVIDER_ERROR') throw error;
     throw new GeminiProviderRequestError({ cause: error });
   }
 

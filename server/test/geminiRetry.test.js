@@ -56,3 +56,16 @@ test('does not retry permanent provider errors', async () => {
 
   assert.equal(calls, 1);
 });
+
+test('does not retry a daily free-tier quota exhaustion', async () => {
+  let calls = 0;
+  await assert.rejects(
+    withGeminiRetries(async () => {
+      calls += 1;
+      throw Object.assign(new Error('{"error":{"message":"Generate content requests per day limit exceeded"}}'), { status: 429 });
+    }, options),
+    (error) => error.code === 'AI_QUOTA_EXCEEDED' && error.status === 429 && /daily quota/.test(error.message),
+  );
+
+  assert.equal(calls, 1);
+});

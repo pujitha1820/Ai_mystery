@@ -28,6 +28,17 @@ export class GeminiProviderRequestError extends Error {
   }
 }
 
+export class GeminiQuotaExceededError extends Error {
+  constructor({ cause }) {
+    super('The Gemini API daily quota for this model has been reached. Try again after the quota resets or review your project limits.');
+    this.name = 'GeminiQuotaExceededError';
+    this.code = 'AI_QUOTA_EXCEEDED';
+    this.status = 429;
+    this.providerStatus = 429;
+    this.cause = cause;
+  }
+}
+
 function errorChain(error) {
   const chain = [];
   let current = error;
@@ -44,6 +55,21 @@ export function getGeminiStatus(error) {
     if (Number.isInteger(value) && value >= 100 && value <= 599) return value;
   }
   return undefined;
+}
+
+function isDailyQuotaExceeded(error) {
+  const details = errorChain(error).map((item) => {
+    let body = item.body;
+    if (typeof body !== 'string') {
+      try { body = JSON.stringify(body); } catch { body = ''; }
+    }
+    let providerError = item.error;
+    if (typeof providerError !== 'string') {
+      try { providerError = JSON.stringify(providerError); } catch { providerError = ''; }
+    }
+    return `${item.message || ''} ${body || ''} ${providerError || ''}`;
+  }).join(' ');
+  return /requests per day limit exceeded|per.day.{0,40}limit exceeded|generate_content_free_tier_requests/i.test(details);
 }
 
 function isTimeout(error) {
@@ -114,6 +140,7 @@ export async function withGeminiRetries(operation, {
     } catch (error) {
       const providerStatus = getGeminiStatus(error);
       const timedOut = isTimeout(error);
+      if (isDailyQuotaExceeded(error)) throw new GeminiQuotaExceededError({ cause: error });
       if (!isRetryableGeminiError(error)) {
         throw new GeminiProviderRequestError({ providerStatus, cause: error });
       }
