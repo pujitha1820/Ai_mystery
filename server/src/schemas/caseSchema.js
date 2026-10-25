@@ -39,32 +39,40 @@ const counts = { easy: [3, 5, 7], medium: [4, 8, 11], hard: [5, 12, 15] };
 const suspectRanges = { easy: [3, 3], medium: [4, 5], hard: [5, 6] };
 const keyClueRanges = { easy: [2, 3], medium: [3, 4], hard: [4, 5] };
 const redHerringRanges = { easy: [0, 1], medium: [1, 2], hard: [2, 3] };
+
+export class CaseConsistencyError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'CaseConsistencyError';
+  }
+}
+
 export function validatePlayableCase(blueprint, evidence, difficulty) {
   const parsedBlueprint = blueprintSchema.safeParse(blueprint);
   const parsedEvidence = evidenceBatchSchema.safeParse({ evidence });
-  if (!parsedBlueprint.success) throw new Error('The generated case blueprint did not match the required structure.');
-  if (!parsedEvidence.success) throw new Error('The generated evidence did not match the required structure.');
+  if (!parsedBlueprint.success) throw new CaseConsistencyError('The generated case blueprint did not match the required structure.');
+  if (!parsedEvidence.success) throw new CaseConsistencyError('The generated evidence did not match the required structure.');
   const b = parsedBlueprint.data; const items = parsedEvidence.data.evidence;
   const [minimumSuspects, maxSuspects] = suspectRanges[difficulty] || suspectRanges.medium;
   const [, minEvidence, maxEvidence] = counts[difficulty] || counts.medium;
-  if (b.suspects.length < minimumSuspects || b.suspects.length > maxSuspects || items.length < minEvidence || items.length > maxEvidence) throw new Error('Generated suspect or evidence counts do not match the selected difficulty.');
+  if (b.suspects.length < minimumSuspects || b.suspects.length > maxSuspects || items.length < minEvidence || items.length > maxEvidence) throw new CaseConsistencyError('Generated suspect or evidence counts do not match the selected difficulty.');
   const suspectIds = b.suspects.map((s) => s.id); const evidenceIds = items.map((e) => e.id);
-  if (new Set(suspectIds).size !== suspectIds.length || new Set(evidenceIds).size !== evidenceIds.length) throw new Error('Generated IDs must be unique.');
-  if (!suspectIds.includes(b.culpritId)) throw new Error('The official culprit must be one of the case suspects.');
+  if (new Set(suspectIds).size !== suspectIds.length || new Set(evidenceIds).size !== evidenceIds.length) throw new CaseConsistencyError('Generated IDs must be unique.');
+  if (!suspectIds.includes(b.culpritId)) throw new CaseConsistencyError('The official culprit must be one of the case suspects.');
   const knownSuspects = new Set(suspectIds); const knownEvidence = new Set(evidenceIds);
-  for (const e of items) if (e.relatedSuspectIds.some((id) => !knownSuspects.has(id))) throw new Error('Evidence refers to an unknown suspect.');
-  for (const s of b.suspects) if (s.relatedEvidenceIds.some((id) => !knownEvidence.has(id))) throw new Error('Suspect refers to unknown evidence.');
-  for (const t of b.timeline) if (t.relatedSuspectIds.some((id) => !knownSuspects.has(id))) throw new Error('Timeline refers to an unknown suspect.');
-  if (b.solution.decisiveEvidenceIds.some((id) => !knownEvidence.has(id))) throw new Error('The solution refers to evidence that is not in the case.');
+  for (const e of items) if (e.relatedSuspectIds.some((id) => !knownSuspects.has(id))) throw new CaseConsistencyError('Evidence refers to an unknown suspect.');
+  for (const s of b.suspects) if (s.relatedEvidenceIds.some((id) => !knownEvidence.has(id))) throw new CaseConsistencyError('Suspect refers to unknown evidence.');
+  for (const t of b.timeline) if (t.relatedSuspectIds.some((id) => !knownSuspects.has(id))) throw new CaseConsistencyError('Timeline refers to an unknown suspect.');
+  if (b.solution.decisiveEvidenceIds.some((id) => !knownEvidence.has(id))) throw new CaseConsistencyError('The solution refers to evidence that is not in the case.');
   const keyIds = new Set(items.filter((e) => e.clueRole === 'key').map((e) => e.id));
   const [minKeyClues, maxKeyClues] = keyClueRanges[difficulty] || keyClueRanges.medium;
   const [minRedHerrings, maxRedHerrings] = redHerringRanges[difficulty] || redHerringRanges.medium;
   const keyItems = items.filter((e) => e.clueRole === 'key');
   const redHerringCount = items.filter((e) => e.clueRole === 'red_herring').length;
-  if (keyItems.length < minKeyClues || keyItems.length > maxKeyClues || redHerringCount < minRedHerrings || redHerringCount > maxRedHerrings) throw new Error('Key clue or red herring counts do not match the selected difficulty.');
-  if (b.solution.decisiveEvidenceIds.filter((id) => keyIds.has(id)).length < 2 || keyItems.filter((item) => item.relatedSuspectIds.includes(b.culpritId)).length < 2) throw new Error('At least two independent key clues must support the solution.');
+  if (keyItems.length < minKeyClues || keyItems.length > maxKeyClues || redHerringCount < minRedHerrings || redHerringCount > maxRedHerrings) throw new CaseConsistencyError('Key clue or red herring counts do not match the selected difficulty.');
+  if (b.solution.decisiveEvidenceIds.filter((id) => keyIds.has(id)).length < 2 || keyItems.filter((item) => item.relatedSuspectIds.includes(b.culpritId)).length < 2) throw new CaseConsistencyError('At least two independent key clues must support the solution.');
   const culprit = b.suspects.find((s) => s.id === b.culpritId);
-  if (!culprit.motive || !culprit.alibi || !b.solution.explanation) throw new Error('The solution is missing essential case details.');
+  if (!culprit.motive || !culprit.alibi || !b.solution.explanation) throw new CaseConsistencyError('The solution is missing essential case details.');
   return { blueprint: b, evidence: items };
 }
 

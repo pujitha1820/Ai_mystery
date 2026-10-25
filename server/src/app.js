@@ -19,7 +19,8 @@ function describeError(error) {
   return {
     name: error?.name,
     code: error?.code,
-    status: error?.status,
+    status: error?.status ?? error?.statusCode,
+    providerStatus: error?.providerStatus,
     message: message.slice(0, 500),
   };
 }
