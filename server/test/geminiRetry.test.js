@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withGeminiRetries } from '../src/services/geminiRetry.js';
 
-const options = { maxRetries: 2, timeoutMs: 10000, baseDelayMs: 500, maxDelayMs: 5000, random: () => 0.5, wait: async () => {} };
+const options = { maxRetries: 2, timeoutMs: 60000, baseDelayMs: 500, maxDelayMs: 5000, random: () => 0.5, wait: async () => {} };
 
 test('retries Gemini 503 responses and returns the later success', async () => {
   let calls = 0;
@@ -42,6 +42,17 @@ test('stops after the configured retries and reports provider unavailability', a
 
   assert.equal(calls, 3);
   assert.deepEqual(waits, [500, 1000]);
+});
+
+test('never sends a Gemini request with a deadline shorter than 10 seconds', async () => {
+  let requestedTimeout;
+  const result = await withGeminiRetries(async ({ timeoutMs }) => {
+    requestedTimeout = timeoutMs;
+    return 'ok';
+  }, { ...options, timeoutMs: 1000 });
+
+  assert.equal(result, 'ok');
+  assert.ok(requestedTimeout >= 10000);
 });
 
 test('does not retry permanent provider errors', async () => {

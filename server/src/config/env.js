@@ -8,7 +8,7 @@ const envSchema = z.object({
   GEMINI_MODEL: z.string().min(1).default('gemini-3.8-flash'),
   GEMINI_MAX_RETRIES: z.coerce.number().int().min(0).max(3).default(2),
   CLIENT_ORIGIN: z.string().url().default('http://localhost:5173'),
-  CASE_GENERATION_TIMEOUT_MS: z.coerce.number().int().min(1000).max(180000).default(60000),
+  CASE_GENERATION_TIMEOUT_MS: z.coerce.number().int().min(10000).max(180000).default(60000),
   CASE_GENERATION_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(3).default(3),
 });
 

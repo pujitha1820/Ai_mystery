@@ -1,5 +1,6 @@
 const RETRYABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
 const TRANSIENT_NETWORK_CODES = new Set(['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT', 'EAI_AGAIN', 'ENETUNREACH']);
+const MIN_REQUEST_TIMEOUT_MS = 10_000;
 
 export class GeminiProviderUnavailableError extends Error {
   constructor({ providerStatus, cause, timedOut = false }) {
@@ -126,12 +127,15 @@ export async function withGeminiRetries(operation, {
   wait = sleep,
   now = Date.now,
 } = {}) {
+  // The Gemini API rejects explicitly supplied deadlines shorter than 10 seconds.
+  // Normalize older Render env values (for example, 1000ms) before sending requests.
+  timeoutMs = Math.max(MIN_REQUEST_TIMEOUT_MS, Number.isFinite(Number(timeoutMs)) ? Number(timeoutMs) : 60000);
   const deadline = now() + timeoutMs;
   let retries = 0;
 
   while (true) {
     const remainingMs = deadline - now();
-    if (remainingMs <= 0) {
+    if (remainingMs < MIN_REQUEST_TIMEOUT_MS) {
       throw new GeminiProviderUnavailableError({ providerStatus: 504, timedOut: true });
     }
 
@@ -155,7 +159,7 @@ export async function withGeminiRetries(operation, {
       }
       const exponential = Math.min(maxDelayMs, baseDelayMs * (2 ** retries) * (0.5 + random()));
       const delayMs = Math.max(exponential, retryAfterMs ?? 0);
-      if (delayMs >= deadline - now()) {
+      if (deadline - now() - delayMs < MIN_REQUEST_TIMEOUT_MS) {
         throw new GeminiProviderUnavailableError({ providerStatus: providerStatus ?? (timedOut ? 504 : undefined), cause: error, timedOut });
       }
       await wait(delayMs);
