@@ -120,7 +120,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 export async function withGeminiRetries(operation, {
   maxRetries = 2,
   timeoutMs = 60000,
-  attemptTimeoutMs = 30000,
+  attemptTimeoutMs = 80000,
   baseDelayMs = 500,
   maxDelayMs = 5000,
   random = Math.random,
